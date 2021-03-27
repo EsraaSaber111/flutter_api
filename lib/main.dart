@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_api/Servics/Api.dart';
+import 'package:flutter_api/post_model.dart';
+import 'package:flutter_api/provider/provider_control.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider<Provider_control>(
+      create: (_) => Provider_control(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<Provider_control>(context);
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: provider.Primary,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: MyHomePage(title: 'Flutter Demo Home Page'),
@@ -29,49 +40,60 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-
-      _counter++;
-    });
+  List<Post> _posts;
+  Color col = Colors.black87;
+  @override
+  void initState() {
+    get_post();
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final provider = Provider.of<Provider_control>(context);
     return Scaffold(
       appBar: AppBar(
-
-        title: Text(widget.title),
+        title: Text('demo Control'),
       ),
-      body: Center(
-
-        child: Column(
-
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
+      body: _posts == null
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  FlatButton(
+                      onPressed: () {
+                        provider.setColor(Colors.orange);
+                      },
+                      child: Text('demo2')),
+                  ListView.builder(
+                      physics: NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      itemCount: _posts.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return ListTile(title: Text(_posts[index].title));
+                      }),
+                ],
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  get_post() {
+    Api().get('posts').then((value) {
+      _posts = [];
+      value.forEach((item) {
+        setState(() {
+          _posts.add(Post.fromJson(item));
+        });
+      });
+    });
+    Api().post('posts', {"userId": 1}).then((value) {
+      _posts = [];
+      value.forEach((item) {
+        setState(() {
+          _posts.add(Post.fromJson(item));
+        });
+      });
+    });
   }
 }
